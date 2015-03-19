@@ -3,12 +3,11 @@ import pickle
 import cPickle as c_pickle
 import h5py
 import shelve
-import dbm
 import sqlite3
 
+import os
 import time
-
-from matplotlib import pyplot
+import matplotlib.pyplot as plt
 
 
 import numpy as np
@@ -82,17 +81,18 @@ def prepare_sqlite():
 def save_by_sqlite(data, dim):
     con = sqlite3.connect("save/sqlite/sqlite.db")
     sql = 'INSERT INTO data_tb VALUES(?, ?)'
-    blob = sqlite3.Binary(data)
+    blob = buffer(data)
     con.execute(sql, (dim, blob))
     con.commit()
     con.close()
+
 def load_by_sqlite(dim):
     con = sqlite3.connect("save/sqlite/sqlite.db")
     cur = con.cursor()
     sql = 'SELECT data FROM data_tb WHERE dim = ?'
     cur.execute(sql, (dim,))
     data = cur.fetchone()[0]
-    return data
+    return np.frombuffer(data).reshape(dim, dim)
 
 def save_speed_test(my_func, dim):
     print str(my_func)
@@ -112,15 +112,25 @@ def load_speed_test(my_func, dim):
     data = my_func(dim)
     end = time.time()
     interval = end - start
+    print data.shape
     print "finished in %.5f sec" % interval
     return interval
 
+
 min_dim = 100
-max_dim = 2000
+max_dim = 3000
 step_dim = 100
+
+# create directories
+modules = ["pickle","h5py","numpy", "cpickle", "shelve", "sqlite"]
+for dir_name in modules:
+    if not os.path.isdir("save/" + dir_name):
+        print "creating directory: %s" % "save/" + dir_name
+        os.mkdir("save/" + dir_name)
 
 prepare_sqlite()
 
+# save & load
 save_pickle_times = [save_speed_test(save_by_pickle, i) for i in xrange(min_dim, max_dim + 1, step_dim)]
 load_pickle_times = [load_speed_test(load_by_pickle, i) for i in xrange(min_dim, max_dim + 1, step_dim)]
 save_npy_times = [save_speed_test(save_by_npy, i) for i in xrange(min_dim, max_dim + 1, step_dim)]
@@ -133,19 +143,58 @@ save_cpickle_times = [save_speed_test(save_by_cpickle, i) for i in xrange(min_di
 load_cpickle_times = [load_speed_test(load_by_cpickle, i) for i in xrange(min_dim, max_dim + 1, step_dim)]
 save_sqlite_times = [save_speed_test(save_by_sqlite, i) for i in xrange(min_dim, max_dim + 1, step_dim)]
 load_sqlite_times = [load_speed_test(load_by_sqlite, i) for i in xrange(min_dim, max_dim + 1, step_dim)]
+# plot save time
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_pickle_times, "xr-", label="pickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_npy_times, "xg-", label="numpy")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_h5py_times, "xb-", label="h5py")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_shelve_times, "xc-", label="shelve")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_cpickle_times, "xm-", label="cpickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_sqlite_times, "xy-", label="sqlite")
+plt.legend(loc='upper left')
+plt.title("Save Time")
+plt.xlabel("numpy dimension")
+plt.ylabel("time(second)")
+plt.savefig("save_time.png")
+plt.show()
 
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_pickle_times, "xr-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_npy_times, "xg-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_h5py_times, "xb-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_shelve_times, "xc-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_cpickle_times, "xm-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_sqlite_times, "xk-")
-pyplot.show()
+# plot load time
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_pickle_times, "xr-", label="pickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_npy_times, "xg-", label="numpy")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_h5py_times, "xb-", label="h5py")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_shelve_times, "xc-", label="shelve")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_cpickle_times, "xm-", label="cpickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_sqlite_times, "xy-", label="sqlite")
+plt.legend(loc='upper left')
+plt.title("Load Time")
+plt.xlabel("numpy dimension")
+plt.ylabel("time(second)")
+plt.savefig("load_time.png")
+plt.show()
 
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_pickle_times, "xr-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_npy_times, "xg-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_h5py_times, "xb-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_shelve_times, "xc-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_cpickle_times, "xm-")
-pyplot.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_sqlite_times, "xk-")
-pyplot.show()
+# plot save time
+# plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_pickle_times, "xr-", label="pickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_npy_times, "xg-", label="numpy")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_h5py_times, "xb-", label="h5py")
+# plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_shelve_times, "xc-", label="shelve")
+# plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_cpickle_times, "xm-", label="cpickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], save_sqlite_times, "xy-", label="sqlite")
+plt.legend(loc='upper left')
+plt.title("Save Time")
+plt.xlabel("numpy dimension")
+plt.ylabel("time(second)")
+plt.savefig("save_time2.png")
+plt.show()
+
+# plot load time
+# plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_pickle_times, "xr-", label="pickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_npy_times, "xg-", label="numpy")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_h5py_times, "xb-", label="h5py")
+# plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_shelve_times, "xc-", label="shelve")
+# plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_cpickle_times, "xm-", label="cpickle")
+plt.plot([i for i in xrange(min_dim, max_dim + 1, step_dim)], load_sqlite_times, "xy-", label="sqlite")
+plt.legend(loc='upper left')
+plt.title("Load Time")
+plt.xlabel("numpy dimension")
+plt.ylabel("time(second)")
+plt.savefig("load_time2.png")
+plt.show()
