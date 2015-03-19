@@ -4,12 +4,10 @@ import cPickle as c_pickle
 import h5py
 import shelve
 import sqlite3
-import pandas
 
 import os
 import time
 import matplotlib.pyplot as plt
-
 
 import numpy as np
 
@@ -34,7 +32,6 @@ def load_by_cpickle(mat_size):
     data = c_pickle.load(f)
     f.close()
     return data
-
 
 def save_by_npy(data, mat_size):
     np.save("save/numpy/numpy" + str(mat_size) + ".npy", data)
@@ -153,7 +150,7 @@ plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], sav
 plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], save_sqlite_times, "xy-", label="sqlite")
 plt.legend(loc='upper left')
 plt.title("Save Time")
-plt.xlabel("numpy dimension")
+plt.xlabel("array dimension")
 plt.ylabel("time(second)")
 plt.savefig("graph/save_time.png")
 plt.show()
@@ -167,7 +164,7 @@ plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], loa
 plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], load_sqlite_times, "xy-", label="sqlite")
 plt.legend(loc='upper left')
 plt.title("Load Time")
-plt.xlabel("numpy dimension")
+plt.xlabel("array dimension")
 plt.ylabel("time(second)")
 plt.savefig("graph/load_time.png")
 plt.show()
@@ -181,7 +178,7 @@ plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], sav
 plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], save_sqlite_times, "xy-", label="sqlite")
 plt.legend(loc='upper left')
 plt.title("Save Time")
-plt.xlabel("numpy dimension")
+plt.xlabel("array dimension")
 plt.ylabel("time(second)")
 plt.savefig("graph/save_time2.png")
 plt.show()
@@ -195,7 +192,7 @@ plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], loa
 plt.plot([i for i in xrange(min_mat_size, max_mat_size + 1, step_mat_size)], load_sqlite_times, "xy-", label="sqlite")
 plt.legend(loc='upper left')
 plt.title("Load Time")
-plt.xlabel("numpy dimension")
+plt.xlabel("array dimension")
 plt.ylabel("time(second)")
 plt.savefig("graph/load_time2.png")
 plt.show()
